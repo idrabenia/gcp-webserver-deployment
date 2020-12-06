@@ -1,0 +1,65 @@
+resources:
+- name: nginx-bes
+  type: compute.v1.backendService
+  properties:
+    port: 80
+    portName: http
+    protocol: HTTP
+    backends:
+      - name: bes
+        balancingMode: UTILIZATION
+        capacityScaler: 1.0
+        group: {{ properties["instanceGroup"] }}
+    maxUtilization: 0.8
+    connectionDraining:
+      drainingTimeoutSec: 300
+    healthChecks:
+      - {{ properties["healthCheckLink"] }}
+
+- name: nginx-url-map
+  type: compute.v1.urlMap
+  properties:
+    defaultService: $(ref.nginx-bes.selfLink)
+
+- name: nginx-http-proxy
+  type: compute.v1.targetHttpProxy
+  properties:
+    urlMap: $(ref.nginx-url-map.selfLink)
+
+- name: ssl-cert
+  type: compute.v1.sslCertificate
+  properties:
+    type: MANAGED
+    managed:
+      domains:
+        - {{ properties["dnsName"] }}
+
+- name: nginx-https-proxy
+  type: compute.v1.targetHttpsProxy
+  properties:
+    sslCertificates:
+      - $(ref.ssl-cert.selfLink)
+    urlMap: $(ref.nginx-url-map.selfLink)
+
+- name: nginx-ipaddress
+  type: compute.v1.globalAddress
+
+- name: nginx-http-forwardingrule
+  type: compute.v1.globalForwardingRule
+  properties:
+    target: $(ref.nginx-http-proxy.selfLink)
+    IPAddress: $(ref.nginx-ipaddress.address)
+    IPProtocol: TCP
+    portRange: 80-80
+
+- name: nginx-https-forwardingrule
+  type: compute.v1.globalForwardingRule
+  properties:
+    target: $(ref.nginx-https-proxy.selfLink)
+    IPAddress: $(ref.nginx-ipaddress.address)
+    IPProtocol: TCP
+    portRange: 443
+
+outputs:
+  - name: ipAddress
+    value: $(ref.nginx-ipaddress.address)

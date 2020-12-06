@@ -1,0 +1,37 @@
+imports:
+- name: nginx-server-template.jinja
+  path: modules/nginx-server.jinja
+
+- name: managed-zone.jinja
+  path: modules/managed-zone.jinja
+
+- name: network.jinja
+  path: modules/network.jinja
+
+- name: load-balancer.jinja
+  path: modules/load-balancer.jinja
+
+resources:
+- name: nginx-server
+  type: nginx-server-template.jinja
+  properties:
+    zone: us-central1-a
+    region: us-central1
+
+- name: network
+  type: network.jinja
+  properties:
+    region: us-central1
+
+- name: load-balancer
+  type: load-balancer.jinja
+  properties:
+    dnsName: drabenia.tk.
+    healthCheckLink: $(ref.nginx-server.healthCheckLink)
+    instanceGroup: $(ref.nginx-server.instanceGroup)
+
+- name: nginx-managed-zone
+  type: managed-zone.jinja
+  properties:
+    dnsName: drabenia.tk.
+    ipAddress: $(ref.load-balancer.ipAddress)

@@ -1,0 +1,33 @@
+resources:
+- type: compute.v1.instance
+  name: quickstart-deployment-vm
+  properties:
+    zone: {{ properties["zone"] }}
+    machineType: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/zones/us-central1-f/machineTypes/f1-micro
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
+
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/global/networks/default
+      #accessConfigs:
+      #- name: External NAT
+      #  type: ONE_TO_ONE_NAT
+
+- name: ig-1
+  type: compute.v1.instanceGroup
+  properties:
+    zone: {{ properties["zone"] }}
+    network: global/networks/default
+
+- name: ig-1-members
+  action: gcp-types/compute-v1:compute.instanceGroups.addInstances
+  properties:
+    project: {{ env["project"] }}
+    zone: {{ properties["zone"] }}
+    instanceGroup: ig-1
+    instances: [ instance: $(ref.quickstart-deployment-vm.selfLink) ]

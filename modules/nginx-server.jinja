@@ -1,0 +1,71 @@
+resources:
+- name: nginx-template
+  type: compute.v1.instanceTemplate
+  properties:
+    properties:
+      description: nginx
+      tags:
+        items:
+          - webserver
+
+      machineType: f1-micro
+      canIpForward: false
+      disks:
+      - deviceName: boot
+        type: PERSISTENT
+        boot: true
+        autoDelete: true
+        initializeParams:
+          sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
+
+      networkInterfaces:
+      - network: projects/{{ env["project"] }}/global/networks/default
+
+      scheduling:
+        onHostMaintenance: MIGRATE
+        automaticRestart: true
+      serviceAccounts:
+        - email: default
+          scopes:
+          - https://www.googleapis.com/auth/compute.readonly
+          - https://www.googleapis.com/auth/devstorage.read_only
+          - https://www.googleapis.com/auth/service.management.readonly
+      metadata:
+        items:
+        - key: startup-script
+          value: |
+            #!/bin/bash
+            sudo apt-get install nginx -y
+
+- name: nginx-lb-hc
+  type: compute.v1.httpHealthCheck
+  properties:
+    port: 80
+    requestPath: /
+
+- name: nginx-mig
+  type: compute.v1.instanceGroupManagers
+  properties:
+    baseInstanceName: nginx
+    instanceTemplate: $(ref.nginx-template.selfLink)
+    targetSize: 1
+    zone: {{ properties["zone"] }}
+    autoHealingPolicies:
+    - healthCheck: $(ref.nginx-lb-hc.selfLink)
+      initialDelaySec: 20
+
+- name: nginx-as
+  type: compute.v1.autoscaler
+  properties:
+    zone: {{ properties["zone"] }}
+    target: $(ref.nginx-mig.selfLink)
+    autoscalingPolicy:
+      minNumReplicas: 1
+      maxNumReplicas: 5
+
+outputs:
+- name: instanceGroup
+  value: $(ref.nginx-mig.instanceGroup)
+
+- name: healthCheckLink
+  value: $(ref.nginx-lb-hc.selfLink)

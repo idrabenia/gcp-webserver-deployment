@@ -1,0 +1,33 @@
+resources:
+- name: ssh-firewall-rule
+  type: compute.v1.firewall
+  properties:
+    sourceRanges: ["0.0.0.0/0"]
+    targetTags: ["webserver"]
+    allowed:
+    - IPProtocol: TCP
+      ports: ["22"]
+
+- name: all-internal-firewall-rule
+  type: compute.v1.firewall
+  properties:
+    sourceRanges: ["0.0.0.0/0"]
+    targetTags: ["webserver"]
+    allowed:
+    - IPProtocol: TCP
+      ports: ["80", "443"]
+    - IPProtocol: ICMP
+
+- name: nginx-router
+  type: compute.v1.router
+  properties:
+    name: nginx-router
+    project: {{ env["project"] }}
+    region: {{ properties["region"] }}
+    network: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/global/networks/default
+    nats:
+      - name: nginx-nat
+        sourceSubnetworkIpRangesToNat: LIST_OF_SUBNETWORKS
+        natIpAllocateOption: AUTO_ONLY
+        subnetworks:
+          - name: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/regions/{{ properties["region"] }}/subnetworks/default
