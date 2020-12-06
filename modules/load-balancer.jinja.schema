@@ -1,0 +1,26 @@
+info:
+  title: Load Balancer Template
+  description: Load Balancer Template for HTTP Server
+  version: 1.0
+
+imports:
+  - path: load-balancer.jinja
+
+required:
+  - instanceGroup
+  - healthCheckLink
+  - dnsName
+
+properties:
+  instanceGroup:
+    type: string
+    description: Instance Group Name
+
+  healthCheckLink:
+    type: string
+    description: Health Check Self Url
+
+  dnsName:
+    type: string
+    default: drabenia.tk.
+    description: Target DNS Name

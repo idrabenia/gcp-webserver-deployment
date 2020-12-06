@@ -1,0 +1,17 @@
+resources:
+- name: nginx-managed-zone
+  type: dns.v1.managedZone
+  properties:
+    description: A managed zone
+    dnsName: {{ properties["dnsName"] }}
+
+- name: nginx-managed-zone-lb-a-record
+  type: gcp-types/dns-v1:resourceRecordSets
+  properties:
+    name: {{ properties["dnsName"] }}
+    managedZone: $(ref.nginx-managed-zone.name)
+    records:
+    - type: A
+      ttl: 300
+      rrdatas:
+      - {{ properties["ipAddress"] }}

@@ -1,0 +1,25 @@
+resources:
+- type: compute.v1.instance
+  name: quickstart-deployment-vm
+  properties:
+    # The properties of the resource depend on the type of resource. For a list
+    # of properties, see the API reference for the resource.
+    zone: us-central1-f
+    # Replace [MY_PROJECT] with your project ID
+    machineType: https://www.googleapis.com/compute/v1/projects/tidal-solstice-225908/zones/us-central1-f/machineTypes/f1-micro
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        # See a full list of image families at https://cloud.google.com/compute/docs/images#os-compute-support
+        # The format of the sourceImage URL is: https://www.googleapis.com/compute/v1/projects/[IMAGE_PROJECT]/global/images/family/[FAMILY_NAME]
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
+    # Replace [MY_PROJECT] with your project ID
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/tidal-solstice-225908/global/networks/default
+      # Access Config required to give the instance a public IP address
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
